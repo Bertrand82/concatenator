@@ -1,0 +1,197 @@
+dir true  D:\git2\concatenator\serializatorJavaSources\src\main\java
+
+ wwwwwwwwwwwwww java wwwwwwwwwww
+
+ wwwwwwwwwwwwww serializatorJavaSources wwwwwwwwwww
+
+
+ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  Concatenator : Clazz.javaxxxx
+
+package serializatorJavaSources;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class Clazz {
+
+	String packageName="";
+	String className="";
+	String text ="";
+	
+	public Clazz(String packageName, String className, String text) {
+		super();
+		this.packageName = packageName;
+		this.className = className;
+		this.text = text;
+	}
+
+	public void writeTo(File dir) {
+		File dirPackage = getDirPackage(dir);
+		dirPackage.mkdirs();
+		File f = new File(dirPackage,className+".java");
+		
+		 try {
+             FileWriter writer = new FileWriter(f);
+             writer.write(text);
+             writer.close();
+         } catch (IOException e) {
+             e.printStackTrace();
+         }
+	}
+
+	private File getDirPackage(File dir) {
+		for(String p : packageName.split("\\.")) {
+				dir = new File(dir,p);
+		}
+		return dir;
+	}
+
+}
+
+
+ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  Concatenator : MainConcatenator.javaxxxx
+
+package serializatorJavaSources;
+
+import java.io.File;
+import java.nio.file.Files;
+
+/**
+ * @author c82bgui
+ * Cette class concatene des ficchiers sources en une seule String facile a colé dans un mail. Utile lorsque les zip sont interdits 
+ * Pour deconcatener, il faut utiliser  utilisé le deconcatenator!
+ */
+public class MainConcatenator {
+
+    static String fileNames = "";
+
+    static int i = 0;
+
+    /**
+     * @param args
+     */
+    public static void main(final String[] args) {
+        final File dir = new File("src/main/java");
+        System.out.println("dir " + dir.exists() + "  " + dir.getAbsolutePath());
+        final String s = getConcatenate(dir);
+        System.out.println(s);
+        System.out.println(fileNames);
+
+    }
+
+    /**
+     * @param pDir
+     * @return
+     */
+    private static String getConcatenate(final File pDir) {
+        String s = "\n wwwwwwwwwwwwww " + pDir.getName() + " wwwwwwwwwww\n";
+        for (final File child : pDir.listFiles()) {
+            if (child.isDirectory()) {
+                s += getConcatenate(child);
+            } else {
+                s += "\n\n xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  Concatenator : " + child.getName() + "xxxx\n\n";
+                s += getFile(child);
+                fileNames += i++ + " " + pDir.getName() + "  " + child.getName() + "\n";
+            }
+        }
+        return s;
+    }
+
+    /**
+     * @param pChild
+     * @return
+     */
+    private static String getFile(final File file) {
+        try {
+            final byte[] fileBytes = Files.readAllBytes(file.toPath());
+            return new String(fileBytes);
+        } catch (final Exception e) {
+            return "Exception " + e.getMessage() + " : " + file.getName();
+        }
+    }
+
+}
+
+
+
+
+
+
+
+ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  Concatenator : MainDeconcatenator.javaxxxx
+
+package serializatorJavaSources;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MainDeconcatenator {
+
+	public MainDeconcatenator() {
+		
+	}
+	
+	private static File dirOut = new File("GENERATED");
+
+	public static void main(String[] args)  throws Exception{
+		dirOut.mkdirs();
+		File fileSrc = new File("serialSources.txt");		
+		desiaralize(fileSrc);
+	}
+
+	public static void desiaralize(File fileSrc) throws Exception{
+		List<Clazz> listClazz = new ArrayList<Clazz>();
+		System.out.println("Start "+fileSrc.getName()+"  exists : "+fileSrc.exists());
+		FileReader in = new FileReader(fileSrc);
+		BufferedReader br = new BufferedReader(in);
+		String line = null;
+		String clazzText="";
+		String packageName="";
+		String className=null;
+		while((line = br.readLine())!= null) {
+		
+			if (line.trim().startsWith("package ")) {				
+				processClazz(packageName,className,clazzText);
+				packageName = getPaxkageNameFromLine(line);						
+				clazzText="";
+			}else if (line.trim().startsWith("public class")) {
+				className = getClassNameFromLine(line);
+			}
+			
+			if (line.trim().startsWith("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")) {
+				//Inutile
+			}else {
+				clazzText+=line+"\n";
+			}
+		}
+		processClazz(packageName,className,clazzText);
+	}
+
+	private static void processClazz(String packageName, String className, String clazzText) {
+		if (className== null) {
+			return;
+		}
+		Clazz clazz = new Clazz(packageName, className, clazzText);
+		clazz.writeTo(dirOut);
+	}
+
+	private static String getPaxkageNameFromLine(String line) {
+		String s = line.trim().replace("package", " ").replace(";", "").trim();
+		return s;
+	}
+
+	private static String getClassNameFromLine(String line) {
+		String s = line.trim().replace("public", " ").replace("{", " ").replace("class", " ").trim();
+		return s;
+	}
+
+}
+
+0 serializatorJavaSources  Clazz.java
+1 serializatorJavaSources  MainConcatenator.java
+2 serializatorJavaSources  MainDeconcatenator.java
+
